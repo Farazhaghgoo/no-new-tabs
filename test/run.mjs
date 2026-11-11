@@ -148,7 +148,7 @@ for (let i = 0; i < 50 && !worker; i++) {
   if (!worker) await sleep(100);
 }
 if (!worker) throw new Error('Extension service worker did not start');
-const sw = await attach(worker.targetId);
+let sw = await attach(worker.targetId);
 
 // Log every top-level commit, to explain failures.
 const log = [];
@@ -332,13 +332,19 @@ async function checkBranding() {
   await shot('deactivation-sad');
   check('deactivation reaches leave', await waitPhase('leave'));
   check('deactivation cleans itself up', await waitPhase('none'));
-  // Turning ON while the OFF animation plays replaces it.
+  // Turning ON while the OFF animation plays replaces it. Waits on which
+  // animation is showing rather than on short phases, which a slow machine
+  // can poll past.
+  const waitFor = async (test, ms = 5000) => {
+    for (const end = Date.now() + ms; Date.now() < end; await sleep(30)) if (await test()) return true;
+    return false;
+  };
   await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
-  await waitPhase('none');
+  await waitFor(async () => await phase() === 'none');
   await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
-  const offPlaying = await waitPhase('duty') || await phase() !== 'none';
+  const offPlaying = await waitFor(async () => await modeOf() === 'off');
   await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
-  check('ON replaces a playing OFF animation', offPlaying && await waitPhase('approach') && await modeOf() === 'on');
+  check('ON replaces a playing OFF animation', offPlaying && await waitFor(async () => await modeOf() === 'on'));
   await waitPhase('none');
   // Turning off mid-sequence must remove the overlay, even while assets load.
   await evaluate(sw, `toggle({id:${tabId}}).then(() => toggle({id:${tabId}})).then(() => true)`);
@@ -374,6 +380,56 @@ async function checkBranding() {
   check('mobile preview has no overflow', await evaluate(page, 'document.documentElement.scrollWidth <= innerWidth'));
   await shot('preview-mobile');
   await cdp.send('Emulation.clearDeviceMetricsOverride', {}, page);
+
+  // A tab opened before NUTS is updated or reloaded runs page scripts that
+  // can no longer hear the extension. The click must still animate there.
+  await open(INDEX);
+  // A second old tab, to check that its page guard stands down after the
+  // reload instead of acting on the switch value it had before.
+  const { targetId: guardTab } = await cdp.send('Target.createTarget', { url: INDEX });
+  const guardPage = await attach(guardTab);
+  for (let i = 0; i < 50 && (await evaluate(guardPage, 'document.readyState').catch(() => '')) !== 'complete'; i++) await sleep(100);
+  await setEnabled(true); // both old tabs now hold "on"
+  await sleep(300);
+  const oldWorker = worker.targetId;
+  await cdp.send('Extensions.loadUnpacked', { path: ROOT }); // reload, as an update does
+  await sleep(800);
+  const waker = await cdp.send('Target.createTarget', { url: INDEX + 'next.html' }); // starts the new worker
+  worker = null;
+  for (let i = 0; i < 50 && !worker; i++) {
+    worker = (await targets('service_worker')).find((t) => t.url.startsWith(`chrome-extension://${extensionId}/`) && t.targetId !== oldWorker);
+    if (!worker) await sleep(100);
+  }
+  check('extension reloaded', Boolean(worker));
+  if (!worker) return;
+  sw = await attach(worker.targetId);
+  await cdp.send('Target.closeTarget', { targetId: waker.targetId });
+  await setEnabled(false);
+  {
+    const { x, y } = await evaluate(guardPage, `(() => { const r = document.querySelector('#redirect').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+    for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) {
+      await cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: 1 }, guardPage);
+    }
+    await sleep(1500);
+    const { targetInfo } = await cdp.send('Target.getTargetInfo', { targetId: guardTab });
+    check('old page guard stands down after a reload', strip(targetInfo.url) === strip(AD));
+    await cdp.send('Target.closeTarget', { targetId: guardTab });
+  }
+  const staleTab = await evaluate(sw, `(async () => (await chrome.tabs.query({})).find(t => t.url === ${JSON.stringify(INDEX)}).id)()`);
+  await evaluate(sw, 'chrome.storage.local.set({ enabled: false }).then(() => true)');
+  await evaluate(sw, `toggle({id:${staleTab}}).then(() => true)`);
+  check('ON animates in a tab opened before a reload', await waitPhase('block') && await modeOf() === 'on');
+  await waitPhase('none');
+  await evaluate(sw, `toggle({id:${staleTab}}).then(() => true)`);
+  check('OFF animates in a tab opened before a reload', await waitPhase('sad') && await modeOf() === 'off');
+  await waitPhase('none');
+  // The scripts added on the first click answer the next one directly.
+  await evaluate(sw, `(() => { globalThis.injected = 0; const run = chrome.scripting.executeScript.bind(chrome.scripting);
+    chrome.scripting.executeScript = (d) => { globalThis.injected++; return run(d); }; return true; })()`);
+  await evaluate(sw, `toggle({id:${staleTab}}).then(() => true)`);
+  check('scripts are added to a tab only once', await waitPhase('block') && await evaluate(sw, 'globalThis.injected') === 0);
+  await waitPhase('none');
+  await evaluate(sw, 'chrome.storage.local.set({ enabled: false }).then(() => true)');
 }
 
 try {

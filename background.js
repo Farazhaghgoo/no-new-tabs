@@ -78,12 +78,39 @@ async function applyToggle(tab) {
   const enabled = !(await isEnabled());
   await chrome.storage.session.set({ blocked: 0 });
   await chrome.storage.local.set({ enabled });
-  // Only a deliberate toolbar activation plays the mascot, in that tab.
-  // Restricted pages and tabs awaiting a reload simply have no receiver.
-  if (enabled && tab?.id != null) {
-    await chrome.tabs.sendMessage(tab.id, { type: 'nuts-activate' }, { frameId: 0 }).catch(() => {});
-  } else if (!enabled && tab?.id != null) {
-    await chrome.tabs.sendMessage(tab.id, { type: 'nuts-deactivate' }, { frameId: 0 }).catch(() => {});
+  // Only a deliberate toolbar click plays the mascot, in that tab.
+  if (tab?.id != null) {
+    await sendToPage(tab.id, { type: enabled ? 'nuts-activate' : 'nuts-deactivate' });
+  }
+}
+
+// The page scripts exactly as manifest.json declares them.
+const PAGE_SCRIPTS = chrome.runtime.getManifest().content_scripts.map((group) => ({
+  allFrames: Boolean(group.all_frames),
+  files: group.js,
+}));
+
+// Tabs that were open before NUTS was installed, updated or reloaded still
+// run the old page scripts, which can no longer hear the extension, and
+// Chrome only adds the new ones when the tab reloads. So when a message finds
+// nobody listening, add the current scripts to the tab and send it again.
+// Chrome's own pages and the Web Store can't run extension scripts at all;
+// there the switch still works, without the animation.
+async function sendToPage(tabId, message) {
+  try {
+    await chrome.tabs.sendMessage(tabId, message, { frameId: 0 });
+    return true;
+  } catch (error) {
+    if (!/Receiving end does not exist/i.test(String(error?.message))) return false;
+  }
+  try {
+    for (const { allFrames, files } of PAGE_SCRIPTS) {
+      await chrome.scripting.executeScript({ target: { tabId, allFrames }, files });
+    }
+    await chrome.tabs.sendMessage(tabId, message, { frameId: 0 });
+    return true;
+  } catch {
+    return false;
   }
 }
 

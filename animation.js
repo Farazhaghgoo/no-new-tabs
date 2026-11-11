@@ -1,5 +1,6 @@
 // Shared by the extension overlay and the offline preview. No remote requests.
 (() => {
+  if (globalThis.NutsAnimation) return; // already loaded in this page
   let current = null;
   let generation = 0;
   let pending = null; // { ticket, mode } while artwork is still decoding

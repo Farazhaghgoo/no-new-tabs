@@ -7,6 +7,11 @@
 //    clicked, so the worker can tell your own link clicks from hijacks.
 
 (() => {
+  // Run once per page, even if the extension adds this script to a tab that
+  // already has it (see sendToPage in background.js).
+  if (globalThis.__nutsContent) return;
+  globalThis.__nutsContent = true;
+
   // null until the stored switch has been read (takes a few milliseconds).
   let enabled = null;
 
@@ -64,6 +69,10 @@
   if (window !== window.top || !window.navigation) return;
 
   navigation.addEventListener('navigate', (event) => {
+    // After NUTS is updated or reloaded, this copy is cut off from the
+    // extension and its switch value is stale. Stand down; the fresh copy
+    // added to the tab takes over.
+    if (!chrome.runtime?.id) return;
     if (enabled === false) return;
     // Real link clicks, form submits by the user, the address bar, back and
     // forward: all fine.
