@@ -82,6 +82,8 @@ async function applyToggle(tab) {
   // Restricted pages and tabs awaiting a reload simply have no receiver.
   if (enabled && tab?.id != null) {
     await chrome.tabs.sendMessage(tab.id, { type: 'nuts-activate' }, { frameId: 0 }).catch(() => {});
+  } else if (!enabled && tab?.id != null) {
+    await chrome.tabs.sendMessage(tab.id, { type: 'nuts-deactivate' }, { frameId: 0 }).catch(() => {});
   }
 }
 

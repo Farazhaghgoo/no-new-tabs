@@ -2,7 +2,9 @@
 (() => {
   let current = null;
   let generation = 0;
+  let pending = null; // { ticket, mode } while artwork is still decoding
   const DURATION = 2600;
+  const DURATION_OFF = 2400;
   const styles = `
     :host { all:initial; position:fixed; top:18px; right:18px; width:min(320px,calc(100vw - 36px));
       z-index:2147483647; pointer-events:none; color:#fff; font:14px/1.4 system-ui,sans-serif; }
@@ -42,11 +44,42 @@
       40%,100% { opacity:0; transform:translate(120px,-45px) rotate(38deg) scale(.7); }
     }
     @keyframes caption { 0%,18% { opacity:0; } 30%,82% { opacity:1; } 100% { opacity:0; } }
+    .scene[data-mode="off"] .character { animation:departure 2400ms cubic-bezier(.4,.1,.3,1) both; }
+    .scene[data-mode="off"] .ad { animation:return 2400ms both; }
+    .scene[data-mode="off"] .caption { z-index:5; background:#374151; animation:caption-off 2400ms both; }
+    .scene[data-mode="off"] .leave { transform:scaleX(-1); }
+    [data-phase="duty"] .duty, [data-phase="sad"] .sad, [data-phase="leave"] .leave { opacity:1; }
+    .quiet[data-mode="off"] { background:#374151; }
+    @keyframes departure {
+      0% { opacity:0; transform:translateY(10px) scale(.9); filter:none; }
+      8%,20% { opacity:1; transform:translateY(0) scale(1); filter:none; }
+      30%,54% { opacity:1; transform:translateY(5px) scale(.97); filter:grayscale(.55) saturate(.7); }
+      96% { opacity:.25; transform:translate(130px,5px) scale(.97); filter:grayscale(.55) saturate(.7); }
+      100% { opacity:0; transform:translate(150px,5px) scale(.97); filter:grayscale(.55) saturate(.7); }
+    }
+    @keyframes return {
+      0%,36% { opacity:0; transform:translateX(90px) rotate(10deg); }
+      44% { opacity:1; transform:translateX(-8px) rotate(-6deg); }
+      50% { opacity:1; transform:translateX(4px) rotate(4deg); }
+      56%,88% { opacity:1; transform:translateX(0) rotate(0); }
+      100% { opacity:0; transform:translateX(0) rotate(0); }
+    }
+    @keyframes caption-off { 0%,8% { opacity:0; } 20%,85% { opacity:1; } 100% { opacity:0; } }
     @media (prefers-reduced-motion:reduce) { * { animation:none!important; } }
   `;
 
-  function stop() {
+  function mode() { return current?.mode ?? null; }
+
+  // stop() always stops. stop({ mode }) only stops that kind of animation, so a
+  // storage event can never kill the other mode's animation it just triggered.
+  function stop(options) {
+    const only = options?.mode;
+    if (only) {
+      const active = current?.mode ?? (pending && pending.ticket === generation ? pending.mode : null);
+      if (active !== only) return;
+    }
     generation++;
+    pending = null;
     if (!current) return;
     current.timers.forEach(clearTimeout);
     current.host.remove();
@@ -54,25 +87,33 @@
     current = null;
   }
 
-  async function play({ assetURL = (path) => path, mount, reducedMotion } = {}) {
+  async function play({ mode = 'on', assetURL = (path) => path, mount, reducedMotion } = {}) {
     stop();
+    mode = mode === 'off' ? 'off' : 'on';
+    const off = mode === 'off';
     const ticket = generation;
+    pending = { ticket, mode };
     const reduced = reducedMotion ?? matchMedia('(prefers-reduced-motion: reduce)').matches;
     const images = [];
     if (!reduced) {
-      for (const pose of ['approach', 'block', 'offer', 'hearts']) {
+      const poses = off ? [['block', 'duty'], ['off', 'sad'], ['approach', 'leave']]
+        : ['approach', 'block', 'offer', 'hearts'].map((name) => [name, name]);
+      for (const [file, pose] of poses) {
         const img = new Image();
         img.className = `pose ${pose}`;
         img.alt = '';
-        img.src = assetURL(`assets/animation/${pose}.png`);
+        img.src = assetURL(`assets/animation/${file}.png`);
         images.push(img);
       }
       try { await Promise.all(images.map((img) => img.decode())); }
       catch { return false; } // Artwork failure never affects protection.
     }
     if (ticket !== generation || !document.documentElement) return false;
+    pending = null;
+    const first = off ? 'duty' : 'approach';
     const host = document.createElement('nuts-activation');
-    host.dataset.phase = reduced ? 'quiet' : 'approach';
+    host.dataset.mode = mode;
+    host.dataset.phase = reduced ? 'quiet' : first;
     const root = host.attachShadow({ mode: 'closed' });
     const style = document.createElement('style');
     style.textContent = styles;
@@ -84,36 +125,38 @@
     root.append(status);
     const scene = document.createElement('div');
     scene.className = reduced ? 'quiet' : 'scene';
-    if (reduced) scene.textContent = '✓ NUTS is protecting your tabs';
+    scene.dataset.mode = mode;
+    if (reduced) scene.textContent = off ? 'NUTS is off. Pop-ups can get through.' : '✓ NUTS is protecting your tabs';
     else {
-      scene.dataset.phase = 'approach';
+      scene.dataset.phase = first;
       const character = document.createElement('div');
       character.className = 'character';
       character.append(...images);
       const ad = document.createElement('div');
       ad.className = 'ad'; ad.textContent = 'AD'; ad.setAttribute('aria-hidden', 'true');
       const caption = document.createElement('div');
-      caption.className = 'caption'; caption.textContent = 'Your tabs. Your rules.';
+      caption.className = 'caption'; caption.textContent = off ? 'Off duty. Pop-ups can get through.' : 'Your tabs. Your rules.';
       scene.append(ad, character, caption);
     }
     const dismiss = document.createElement('button');
     dismiss.type = 'button'; dismiss.textContent = '×';
     dismiss.setAttribute('aria-label', 'Dismiss NUTS animation');
-    dismiss.addEventListener('click', stop);
+    dismiss.addEventListener('click', () => stop());
     root.append(scene, dismiss);
     (mount || document.documentElement).append(host);
     const escape = (event) => { if (event.key === 'Escape') stop(); };
     document.addEventListener('keydown', escape);
-    current = { host, timers: [], escape };
+    current = { host, mode, timers: [], escape };
     const later = (fn, delay) => current.timers.push(setTimeout(fn, delay));
-    later(() => { status.textContent = 'NUTS is protecting your tabs'; }, 30);
+    later(() => { status.textContent = off ? 'NUTS is off' : 'NUTS is protecting your tabs'; }, 30);
     if (!reduced) {
-      for (const [phase, delay] of [['block', 620], ['offer', 1120], ['hearts', 1700]]) {
+      const steps = off ? [['sad', 500], ['leave', 1300]] : [['block', 620], ['offer', 1120], ['hearts', 1700]];
+      for (const [phase, delay] of steps) {
         later(() => { host.dataset.phase = scene.dataset.phase = phase; }, delay);
       }
     }
-    later(stop, reduced ? 1200 : DURATION);
+    later(() => stop(), reduced ? 1200 : off ? DURATION_OFF : DURATION);
     return true;
   }
-  globalThis.NutsAnimation = { play, stop, duration: DURATION };
+  globalThis.NutsAnimation = { play, stop, mode, duration: DURATION, durationOff: DURATION_OFF };
 })();

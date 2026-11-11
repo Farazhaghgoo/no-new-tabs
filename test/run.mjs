@@ -309,6 +309,7 @@ async function checkBranding() {
     writeFileSync(join(screenshots, `${name}.png`), Buffer.from(data, 'base64'));
   };
   const phase = () => evaluate(page, 'document.querySelector("nuts-activation")?.dataset.phase || "none"');
+  const modeOf = () => evaluate(page, 'document.querySelector("nuts-activation")?.dataset.mode || "none"');
   const waitPhase = async (wanted) => {
     for (let i = 0; i < 100; i++) {
       if (await phase() === wanted) return true;
@@ -325,6 +326,20 @@ async function checkBranding() {
   check('activation reaches heart eyes', await waitPhase('hearts'));
   await shot('activation-hearts');
   check('activation cleans itself up', await waitPhase('none'));
+  // ON -> OFF plays the off-duty animation.
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
+  check('deactivation plays off mode', await waitPhase('sad') && await modeOf() === 'off');
+  await shot('deactivation-sad');
+  check('deactivation reaches leave', await waitPhase('leave'));
+  check('deactivation cleans itself up', await waitPhase('none'));
+  // Turning ON while the OFF animation plays replaces it.
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
+  await waitPhase('none');
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
+  const offPlaying = await waitPhase('duty') || await phase() !== 'none';
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
+  check('ON replaces a playing OFF animation', offPlaying && await waitPhase('approach') && await modeOf() === 'on');
+  await waitPhase('none');
   // Turning off mid-sequence must remove the overlay, even while assets load.
   await evaluate(sw, `toggle({id:${tabId}}).then(() => toggle({id:${tabId}})).then(() => true)`);
   await waitPhase('approach');
@@ -334,17 +349,25 @@ async function checkBranding() {
   await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
   check('reduced motion quiet confirmation', await waitPhase('quiet'));
   check('reduced motion cleanup', await waitPhase('none'));
-  await evaluate(sw, 'toggle().then(() => true)');
+  await waitPhase('none');
+  // Reduced motion OFF: quiet note in off mode.
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
+  check('reduced motion OFF quiet confirmation', await waitPhase('quiet') && await modeOf() === 'off');
+  check('reduced motion OFF cleanup', await waitPhase('none'));
   await cdp.send('Emulation.setEmulatedMedia', { features: [] }, page);
   await evaluate(sw, `Promise.all([toggle({id:${tabId}}),toggle({id:${tabId}})]).then(() => true)`);
   check('rapid toggle ends OFF', await evaluate(sw, 'isEnabled()') === false);
   await sleep(300);
-  check('rapid toggle leaves no overlay', await phase() === 'none');
+  check('rapid toggle never shows an ON animation', await modeOf() !== 'on');
+  check('rapid toggle OFF animation cleans up', await waitPhase('none'));
   await open(pathToFileURL(join(ROOT, 'preview.html')).href);
   check('offline preview images load', await evaluate(page, 'Array.from(document.images).every(i => i.complete && i.naturalWidth > 0)'));
   await shot('preview-desktop');
   await evaluate(page, 'document.getElementById("replay").click(); true');
   check('offline preview plays', await waitPhase('block'));
+  await waitPhase('none');
+  await evaluate(page, 'document.getElementById("replay-off").click(); true');
+  check('offline preview plays off mode', await waitPhase('sad'));
   await waitPhase('none');
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true }, page);
   await sleep(100);
@@ -381,7 +404,7 @@ try {
     beforeIcon === 'icons/off-16.png' && onIcon === 'icons/on-16.png' && offIcon === 'icons/off-16.png' &&
     enabledOn === true && await evaluate(sw, 'isEnabled()') === false && tooltip.includes('1 blocked');
   if (!toggleOk) failures++;
-  console.log(`Toolbar: standing icons swap, old badge cleared, no count overlay, count in tooltip  ${toggleOk ? 'PASS' : 'FAIL'}\n`);
+  console.log(`Toolbar: face icons swap, old badge cleared, no count overlay, count in tooltip  ${toggleOk ? 'PASS' : 'FAIL'}\n`);
 
   if (BRANDING_ONLY) {
     await checkBranding();
