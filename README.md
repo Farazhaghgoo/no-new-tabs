@@ -19,12 +19,15 @@ NUTS comes with a squirrel bouncer: soft welcome, strong boundaries.
 
 | Where | What you see |
 |---|---|
-| Toolbar, switch on | <img src="icons/on-32.png" width="24" alt=""> Standing squirrel on green, stop hand raised |
-| Toolbar, switch off | <img src="icons/off-32.png" width="24" alt=""> Standing squirrel on grey, arm lowered and sad expression |
-| Extensions page and menus | <img src="icons/logo-48.png" width="24" alt=""> The active standing mascot |
+| Toolbar, switch on | <img src="icons/on-32.png" width="24" alt=""> Happy face on green |
+| Toolbar, switch off | <img src="icons/off-32.png" width="24" alt=""> Sad, greyed face on grey |
+| Extensions page and menus | <img src="icons/logo-48.png" width="24" alt=""> The happy face |
 | Turning it on | A 2.6-second animation in the corner of the page |
+| Turning it off | A 2.4-second animation: she goes off duty and the ad comes back |
 
 When you switch NUTS on from the toolbar, the squirrel walks in, pushes an ad window away, offers you an acorn and briefly gets heart eyes. It is silent, lets clicks through to the page, and closes itself; Escape or its × button closes it early, and switching off cancels it. If your system asks for reduced motion, you get a short "NUTS is protecting your tabs" note instead. It never plays on page loads or for each blocked ad.
+
+When you switch NUTS off from the toolbar, she lowers her stop hand, her colour drains to grey with her ears down, and she walks off while the ad window slides back in, with the caption "Off duty. Pop-ups can get through." Reduced motion gets a short "NUTS is off" note instead. Switching back on during it replaces it with the switch-on animation.
 
 Chrome's own pages (like `chrome://` pages and the Web Store) can't show the animation, but the switch still works there.
 
@@ -47,10 +50,10 @@ Click the toolbar icon to switch it on or off.
 
 | Icon | Meaning |
 |---|---|
-| Standing, raised stop hand, green | Protection is active. |
-| Standing, relaxed arm, sad, grey | Protection is inactive. Pages behave normally. |
+| Happy face, green | Protection is active. |
+| Sad, greyed face, grey | Protection is inactive. Pages behave normally. |
 
-The logo changes to show the mode; there is no ON/OFF text or number badge over it. Hover over the toolbar icon to read the blocked count while protection is active. Full-size standing logos are included in `assets/brand/nuts-standing-on.png` and `nuts-standing-off.png`.
+The face changes to show the mode; there is no ON/OFF text or number badge over it. Hover over the toolbar icon to read the blocked count while protection is active. Full-size standing logos are included in `assets/brand/nuts-standing-on.png` and `nuts-standing-off.png`.
 
 The switch stays as you left it after Chrome restarts.
 
@@ -96,9 +99,9 @@ The switch stays as you left it after Chrome restarts.
 | `background.js` | The switch, mascot icon and hover tooltip. Closes tabs that pages open (`webNavigation.onCreatedNavigationTarget`). Sends the tab back when a redirect slips past the page guard. |
 | `content.js` | Runs at the start of every page. In the top frame, it cancels page-started navigations to another site through the [Navigation API](https://developer.mozilla.org/docs/Web/API/Navigation_API)'s `navigate` event. In every frame, it tells the background which real links you click, so your own clicks are never blocked. |
 | `site.js` | Decides whether two addresses are the same site (so `www.example.com` and `player.example.com` count as one). |
-| `icons/` | Standing toolbar logos (`on-*`, `off-*`) and the app icon (`logo-*`). |
-| `animation.js`, `activation.js` | The switch-on animation, and the receiver that plays it in the tab where you clicked the toolbar. |
-| `assets/` | The full-body logo and social preview (`brand/`), animation poses (`animation/`) and the generated source sheets (`source/`). See [`assets/brand/ARTWORK.md`](assets/brand/ARTWORK.md). |
+| `icons/` | Toolbar faces (`on-*`, `off-*`) and the app icon (`logo-*`). |
+| `animation.js`, `activation.js` | The switch-on and switch-off animations, and the receiver that plays them in the tab where you clicked the toolbar. |
+| `assets/` | The full-body logo, standing poses and social preview (`brand/`), animation poses (`animation/`) and the generated source sheets (`source/`). See [`assets/brand/ARTWORK.md`](assets/brand/ARTWORK.md). |
 | `tools/` | `make-icons.mjs` re-exports every icon and pose from the source sheets (Windows), `make-social-preview.mjs` renders the social preview, `package.ps1` builds a release zip. |
 | `preview.html` | Offline artwork gallery and animation preview. |
 
