@@ -31,7 +31,28 @@ function countBlocked() {
 
 // ------------------------------------------------------- toolbar button
 
-async function render() {
+// Storage changes can ask for several redraws at once. Running them side by
+// side let an older one finish last and leave the badge showing the wrong
+// state, so draws run one at a time and the last one reads the final state.
+let drawing = null;
+let redrawWanted = false;
+
+function render() {
+  if (drawing) {
+    redrawWanted = true;
+    return drawing;
+  }
+  drawing = (async () => {
+    do {
+      redrawWanted = false;
+      await draw().catch(() => {});
+    } while (redrawWanted);
+    drawing = null;
+  })();
+  return drawing;
+}
+
+async function draw() {
   const enabled = await isEnabled();
   const { blocked } = await chrome.storage.session.get({ blocked: 0 });
 

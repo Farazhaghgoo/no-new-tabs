@@ -360,12 +360,21 @@ try {
     await sleep(100); // the worker draws the badge as it starts
     before = await badge();
   }
+  // Wait up to 3 s for the expected badge, then make sure it stays: a late
+  // redraw must not flip it back.
+  const settledBadge = async (expected) => {
+    let text = await badge();
+    for (let i = 0; i < 30 && text !== expected; i++) {
+      await sleep(100);
+      text = await badge();
+    }
+    await sleep(500);
+    return badge();
+  };
   await evaluate(sw, 'toggle().then(() => true)');
-  await sleep(200);
-  const afterOn = await badge();
+  const afterOn = await settledBadge('ON');
   await evaluate(sw, 'toggle().then(() => true)');
-  await sleep(200);
-  const afterOff = await badge();
+  const afterOff = await settledBadge('OFF');
   const toggleOk = before === 'OFF' && afterOn === 'ON' && afterOff === 'OFF';
   if (!toggleOk) failures++;
   console.log(`Toolbar toggle: badge ${before} -> ${afterOn} -> ${afterOff}  ${toggleOk ? 'PASS' : 'FAIL'}\n`);
