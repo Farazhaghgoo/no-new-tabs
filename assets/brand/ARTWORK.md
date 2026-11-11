@@ -5,8 +5,8 @@
 | Asset | Used for | Why |
 |---|---|---|
 | `nuts-logo.png` (full-body squirrel, 1254 px) | Master copy of the brand image | Original transparent character. Edit from this. |
-| `nuts-logo-640.png` | README hero, social preview | Same image, small enough for web pages. |
-| `nuts-logo-square.png` | `preview.html` gallery | Padded square for layouts that crop. |
+| `nuts-logo-640.png` | README hero, social preview, `preview.html` | Same image, small enough for web pages and the release zip. |
+| `nuts-logo-square.png` | Avatars and other square crops | The master with transparent padding. |
 | `social-preview.png` (1280×640) | GitHub repository social preview, link shares | Logo plus name and pitch; rendered by `tools/make-social-preview.mjs`. |
 | `icons/on-16.png`, `on-32.png` | Toolbar while the switch is on | Happy face cropped to the green disc, so it stays readable at 16 px. |
 | `icons/off-16.png`, `off-32.png` | Toolbar while the switch is off | Sad face cropped to the grey disc. |

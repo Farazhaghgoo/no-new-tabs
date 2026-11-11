@@ -119,7 +119,7 @@ Check activation phases, cancellation, rapid toggles, reduced motion, and deskto
 node test/run.mjs --branding-only
 ```
 
-On Windows, package the extension, artwork, source sheets, preview, and tests:
+On Windows, build `releases/NUTS-<version>.zip` with the files Chrome needs, the preview page and this README:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1

@@ -1,32 +1,40 @@
+# Builds releases/NUTS-<version>.zip: the files Chrome needs to load the
+# extension, plus the offline preview page and README. Source sheets, tools and
+# tests stay in the repository.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $version = (Get-Content (Join-Path $root 'manifest.json') -Raw | ConvertFrom-Json).version
-$name = "NUTS-guardian-$version"
+$name = "NUTS-$version"
 $release = Join-Path $root 'releases'
 $stage = Join-Path $release $name
+$zip = Join-Path $release "$name.zip"
+
+# Start clean so files removed from the project don't linger in the build.
+if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
+if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
-foreach ($file in @('manifest.json','background.js','content.js','site.js','animation.js','activation.js','preview.html','preview.css','preview.js','README.md')) {
+
+foreach ($file in @('manifest.json', 'background.js', 'content.js', 'site.js', 'animation.js', 'activation.js',
+                    'preview.html', 'preview.css', 'preview.js', 'README.md')) {
   Copy-Item -LiteralPath (Join-Path $root $file) -Destination $stage
 }
-foreach ($folder in @('icons','assets/animation','assets/source','tools','test','assets/brand')) {
-  New-Item -ItemType Directory -Force -Path (Join-Path $stage $folder) | Out-Null
+foreach ($folder in @('icons', 'assets/animation')) {
+  $target = Join-Path $stage $folder
+  New-Item -ItemType Directory -Force -Path $target | Out-Null
+  Get-ChildItem -LiteralPath (Join-Path $root $folder) -File -Filter '*.png' | Copy-Item -Destination $target
 }
-foreach ($folder in @('icons','assets/animation','assets/source')) {
-  Get-ChildItem -LiteralPath (Join-Path $root $folder) -File | Copy-Item -Destination (Join-Path $stage $folder)
-}
-foreach ($file in @('nuts-logo.png','nuts-logo-square.png','ARTWORK.md')) {
-  Copy-Item -LiteralPath (Join-Path $root "assets/brand/$file") -Destination (Join-Path $stage 'assets/brand')
-}
-foreach ($file in @('export-brand.ps1','make-icons.mjs','package.ps1')) {
-  Copy-Item -LiteralPath (Join-Path $root "tools/$file") -Destination (Join-Path $stage 'tools')
-}
-Copy-Item -Path (Join-Path $root 'test/*') -Destination (Join-Path $stage 'test') -Recurse -Force
-$zip = Join-Path $release "$name.zip"
-Compress-Archive -LiteralPath $stage -DestinationPath $zip -Force
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$archive = [System.IO.Compression.ZipFile]::OpenRead($zip)
-try {
-  $manifestEntry = $archive.Entries | Where-Object { $_.FullName.Replace('\','/') -eq "$name/manifest.json" }
-  if (-not $manifestEntry) { throw 'Archive is missing the extension manifest.' }
-  Write-Output "Verified $($archive.Entries.Count) files in $zip"
-} finally { $archive.Dispose() }
+$brand = Join-Path $stage 'assets/brand'
+New-Item -ItemType Directory -Force -Path $brand | Out-Null
+Copy-Item -LiteralPath (Join-Path $root 'assets/brand/nuts-logo-640.png') -Destination $brand
+
+# Windows' own tar writes zip entries with forward slashes, so the archive
+# unpacks correctly on macOS and Linux too (Compress-Archive in Windows
+# PowerShell 5.1 writes backslashes).
+& (Join-Path $env:SystemRoot 'System32\tar.exe') -a -c -f $zip -C $release $name
+if ($LASTEXITCODE -ne 0) { throw "tar failed with exit code $LASTEXITCODE" }
+
+$entries = & (Join-Path $env:SystemRoot 'System32\tar.exe') -t -f $zip
+if ($entries -notcontains "$name/manifest.json") { throw 'Archive is missing the extension manifest.' }
+if ($entries | Where-Object { $_ -like '*\*' }) { throw 'Archive has backslash paths.' }
+$size = [Math]::Round((Get-Item -LiteralPath $zip).Length / 1MB, 1)
+Write-Output "Built $zip ($($entries.Count) entries, $size MB)"
