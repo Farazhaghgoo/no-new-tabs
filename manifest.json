@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "A one-click shield. While it is on, pages cannot open new tabs or send your tab to another site.",
   "minimum_chrome_version": "110",
-  "permissions": ["storage"],
+  "permissions": ["storage", "webNavigation"],
   "background": {
     "service_worker": "background.js"
   },

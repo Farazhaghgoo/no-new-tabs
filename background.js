@@ -60,3 +60,26 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.runtime.onInstalled.addListener(render);
 chrome.runtime.onStartup.addListener(render);
+
+// ------------------------------------------------- tabs opened by pages
+
+// Fires when a page makes a new tab or window: window.open, target="_blank",
+// popunders from iframes. It does not fire for Ctrl+T, bookmarks or the
+// address bar, so those keep working while the switch is on.
+chrome.webNavigation.onCreatedNavigationTarget.addListener(async (details) => {
+  if (!(await isEnabled())) return;
+  closeTab(details.tabId);
+});
+
+async function closeTab(tabId, attempt = 0) {
+  try {
+    await chrome.tabs.remove(tabId);
+    countBlocked();
+  } catch (error) {
+    // Chrome refuses tab edits while the user is dragging a tab: retry shortly.
+    if (attempt < 5 && /cannot be edited/i.test(String(error && error.message))) {
+      setTimeout(() => closeTab(tabId, attempt + 1), 100);
+    }
+    // Any other error means the tab is already gone.
+  }
+}
