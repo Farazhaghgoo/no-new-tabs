@@ -69,12 +69,128 @@ chrome.storage.onChanged.addListener((changes, area) => {
 chrome.runtime.onInstalled.addListener(render);
 chrome.runtime.onStartup.addListener(render);
 
+// ---------------------------------------------------- per-tab memory
+//
+// tab:<id> = {
+//   url, site   last page the tab was allowed to be on
+//   click       { site, at }  last real link the user clicked in this tab
+//   restore     { url, at }   set while the tab is being sent back
+//   bounces     [times]       recent send-backs, to stop endless loops
+// }
+
+const tabQueues = new Map();
+
+// Runs fn(state) for one tab at a time and saves what it returns.
+function withTab(tabId, fn) {
+  const key = `tab:${tabId}`;
+  const run = (tabQueues.get(tabId) || Promise.resolve())
+    .then(async () => {
+      const { [key]: state = {} } = await chrome.storage.session.get(key);
+      const next = await fn(state);
+      if (next) await chrome.storage.session.set({ [key]: next });
+    })
+    .catch(() => {});
+  tabQueues.set(tabId, run);
+  return run;
+}
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  tabQueues.delete(tabId);
+  chrome.storage.session.remove(`tab:${tabId}`).catch(() => {});
+});
+
+chrome.tabs.onReplaced.addListener(async (addedId, removedId) => {
+  const old = `tab:${removedId}`;
+  const { [old]: state } = await chrome.storage.session.get(old);
+  if (state) await chrome.storage.session.set({ [`tab:${addedId}`]: state });
+  await chrome.storage.session.remove(old);
+});
+
 // --------------------------------------------- messages from the pages
 
 chrome.runtime.onMessage.addListener((message, sender) => {
   const tabId = sender.tab && sender.tab.id;
   if (tabId == null || !message) return;
   if (message.type === 'blocked-redirect') countBlocked();
+  if (message.type === 'user-nav') {
+    const site = NoNewTabsSite.of(message.url);
+    if (site) withTab(tabId, (state) => ({ ...state, click: { site, at: Date.now() } }));
+  }
+});
+
+// ---------------------------------------- redirects the page guard misses
+//
+// The page guard cannot see two kinds of redirect:
+//   - a cross-site iframe (often the video player) doing top.location = ad
+//   - a link on the same site whose server forwards to another site
+// Both commit as a normal top-level navigation. If the tab lands on another
+// site and the user did not click a real link there, send it back.
+
+const CLICK_WINDOW = 10_000;
+const RESTORE_WINDOW = 5_000;
+const BOUNCE_WINDOW = 10_000;
+const MAX_BOUNCES = 3;
+
+// Navigations the page can cause. Everything else (typed URL, bookmark,
+// reload, start page, ...) comes from the browser itself.
+const PAGE_TRANSITIONS = new Set(['link', 'form_submit']);
+
+function withoutHash(url) {
+  const i = url.indexOf('#');
+  return i === -1 ? url : url.slice(0, i);
+}
+
+async function sendBack(tabId, url, direct) {
+  if (!direct) {
+    try {
+      await chrome.tabs.goBack(tabId); // keeps the old page's state when it can
+      return;
+    } catch {
+      // No history entry to go back to: load the page instead.
+    }
+  }
+  chrome.tabs.update(tabId, { url }).catch(() => {});
+}
+
+chrome.webNavigation.onCommitted.addListener((d) => {
+  if (d.frameId !== 0) return;
+  if (d.documentLifecycle && d.documentLifecycle !== 'active') return; // prerender
+
+  withTab(d.tabId, async (state) => {
+    const now = Date.now();
+    const site = NoNewTabsSite.of(d.url);
+    const qualifiers = d.transitionQualifiers || [];
+    const accept = () => ({ url: d.url, site, bounces: state.bounces || [] });
+
+    // While sending a tab back, the first step is goBack. If that lands on a
+    // different page than the one we left (the redirect had replaced it),
+    // load the right page directly.
+    const restore = state.restore && now - state.restore.at < RESTORE_WINDOW ? state.restore : null;
+    if (restore) {
+      if (withoutHash(d.url) === withoutHash(restore.url)) return accept();
+      if (qualifiers.includes('forward_back')) {
+        sendBack(d.tabId, restore.url, true);
+        return state;
+      }
+    }
+
+    if (!state.site || !site || site === state.site) return accept();
+    if (!(await isEnabled())) return accept();
+    if (qualifiers.includes('from_address_bar') || qualifiers.includes('forward_back')) return accept();
+    if (!PAGE_TRANSITIONS.has(d.transitionType)) return accept();
+
+    // The user clicked a real link to this site, or a link that already
+    // pointed away from the old site (so following its redirects is fine).
+    const click = state.click && now - state.click.at < CLICK_WINDOW ? state.click : null;
+    if (click && (click.site === site || click.site !== state.site)) return accept();
+
+    const bounces = (state.bounces || []).filter((t) => now - t < BOUNCE_WINDOW);
+    if (bounces.length >= MAX_BOUNCES) return accept(); // give up rather than loop
+
+    countBlocked();
+    sendBack(d.tabId, state.url, Boolean(restore));
+    return { ...state, click: null, bounces: [...bounces, now], restore: { url: state.url, at: now } };
+  });
 });
 
 // ------------------------------------------------- tabs opened by pages
