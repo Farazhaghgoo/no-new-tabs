@@ -1,24 +1,34 @@
-# NUTS
+<p align="center">
+  <img src="assets/brand/nuts-logo-640.png" width="300" alt="The NUTS squirrel offering you an acorn while pushing an ad window away">
+</p>
 
-**N**o **U**nwanted **T**abs or **S**waps: for streaming sites that drive you nuts.
-with the hottest mascot EVERRRR!!!!
+<h1 align="center">NUTS</h1>
+
+<p align="center"><b>N</b>o <b>U</b>nwanted <b>T</b>abs or <b>S</b>waps: for streaming sites that drive you nuts.<br>
+with the hottest mascot EVERRRR!!!!</p>
+
 A Chrome extension with one switch. While it is **on**, web pages cannot open new tabs or windows, and cannot swap your current tab for another site.
 
 It is meant for sites, like some streaming sites, where every click first opens an ad in a new tab or redirects you to one. Ad blockers often miss these, because the ad opens from a real click and the browser treats it as something you asked for. This extension doesn't try to recognise ads: while it's on, it blocks all of these tabs and redirects.
 
 Turn it on when you visit such a site and off when you leave.
 
-## Guardian edition — artwork and activation
+## Meet the bouncer
 
-The toolbar now shows a happy squirrel on green when ON and a sad squirrel on grey when OFF. The approved full-body character is the general extension logo. PNGs are included at 16, 32, 48 and 128 px, with 512 px face artwork for other uses.
+NUTS comes with a squirrel bouncer: soft welcome, strong boundaries.
 
-Clicking the toolbar button to turn protection ON plays a 2.6-second animation in the upper-right corner of the current page: she approaches, pushes a separate ad panel away, offers an acorn, and briefly has heart eyes. This is a lightweight four-pose sprite animation with CSS motion, not a rigged 3D video. It does not play on page loads or every blocked ad. It is silent, allows clicks through to the page, and can be dismissed with Escape or its close button. Turning OFF cancels it. The operating system's reduced-motion preference replaces it with a brief static confirmation.
+| Where | What you see |
+|---|---|
+| Toolbar, switch on | <img src="icons/on-32.png" width="24" alt=""> Happy squirrel on green |
+| Toolbar, switch off | <img src="icons/off-32.png" width="24" alt=""> Sad squirrel on grey |
+| Extensions page and menus | <img src="icons/logo-48.png" width="24" alt=""> The happy face |
+| Turning it on | A 2.6-second animation in the corner of the page |
 
-Chrome internal pages and other restricted pages cannot show the animation. Protection still toggles. Reload pages already open when you install or update the extension.
+When you switch NUTS on from the toolbar, the squirrel walks in, pushes an ad window away, offers you an acorn and briefly gets heart eyes. It is silent, lets clicks through to the page, and closes itself; Escape or its × button closes it early, and switching off cancels it. If your system asks for reduced motion, you get a short "NUTS protection is on" note instead. It never plays on page loads or for each blocked ad.
 
-**Preview:** open `preview.html` directly from the extracted folder, then click **Turn on the charm**. The preview works offline and includes both toggle states and the general logo. This preview button demonstrates the artwork; it does not change your installed extension's state.
+Chrome's own pages (like `chrome://` pages and the Web Store) can't show the animation, but the switch still works there.
 
-**Brand files:** `assets/brand/nuts-logo.png` is the approved original; `nuts-logo-square.png` adds transparent padding. `assets/animation/` contains the four animation poses. `assets/source/` contains the generated source sheets. See `assets/brand/ARTWORK.md` for provenance and design directions.
+To see the artwork and animation without installing anything, open `preview.html` in Chrome and click **Turn on the charm**.
 
 ## Install
 
@@ -37,9 +47,9 @@ Click the toolbar icon to switch it on or off.
 
 | Icon | Badge | Meaning |
 |---|---|---|
-| Green | `ON` | On. Nothing blocked yet since you switched it on. |
-| Green | a number | On. That many tabs and redirects were blocked. |
-| Grey | `OFF` | Off. Pages behave normally. |
+| Happy, green | `ON` | On. Nothing blocked yet since you switched it on. |
+| Happy, green | a number | On. That many tabs and redirects were blocked. |
+| Sad, grey | `OFF` | Off. Pages behave normally. |
 
 The switch stays as you left it after Chrome restarts.
 
@@ -85,9 +95,10 @@ The switch stays as you left it after Chrome restarts.
 | `background.js` | The switch and badge. Closes tabs that pages open (`webNavigation.onCreatedNavigationTarget`). Sends the tab back when a redirect slips past the page guard. |
 | `content.js` | Runs at the start of every page. In the top frame, it cancels page-started navigations to another site through the [Navigation API](https://developer.mozilla.org/docs/Web/API/Navigation_API)'s `navigate` event. In every frame, it tells the background which real links you click, so your own clicks are never blocked. |
 | `site.js` | Decides whether two addresses are the same site (so `www.example.com` and `player.example.com` count as one). |
-| `icons/` | Happy/sad toolbar icons and general logo sizes. |
-| `animation.js`, `activation.js` | Shared animation renderer and top-frame toolbar activation receiver. |
-| `tools/export-brand.ps1` | Re-export PNGs from the saved sheets on Windows; `node tools/make-icons.mjs` invokes it. |
+| `icons/` | Toolbar faces (`on-*`, `off-*`) and the app icon (`logo-*`). |
+| `animation.js`, `activation.js` | The switch-on animation, and the receiver that plays it in the tab where you clicked the toolbar. |
+| `assets/` | The full-body logo and social preview (`brand/`), animation poses (`animation/`) and the generated source sheets (`source/`). See [`assets/brand/ARTWORK.md`](assets/brand/ARTWORK.md). |
+| `tools/` | `make-icons.mjs` re-exports every icon and pose from the source sheets (Windows), `make-social-preview.mjs` renders the social preview, `package.ps1` builds a release zip. |
 | `preview.html` | Offline artwork gallery and animation preview. |
 
 Nothing is sent anywhere. The extension makes no network requests, and it stores only the switch, the blocked count and, per open tab, the last allowed address, which is cleared when you close the tab or the browser.

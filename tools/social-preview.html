@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NUTS social preview</title>
+<!-- 1280x640 card for GitHub's social preview and link shares.
+     Rendered to assets/brand/social-preview.png by tools/make-social-preview.mjs. -->
+<style>
+  html, body { margin: 0; width: 1280px; height: 640px; overflow: hidden; }
+  body {
+    background: #0f2418;
+    color: #ffffff;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    position: relative;
+  }
+  .text { position: absolute; left: 88px; top: 120px; width: 640px; }
+  h1 { margin: 0; font-size: 168px; line-height: 0.95; font-weight: 800; letter-spacing: -4px; }
+  .acronym { margin: 18px 0 0; font-size: 42px; font-weight: 600; color: #86efac; }
+  .acronym b { color: #ffffff; font-weight: 800; }
+  .pitch { margin: 28px 0 0; font-size: 30px; line-height: 1.35; color: #d1fae5; max-width: 600px; }
+  .tag {
+    position: absolute; left: 88px; bottom: 64px;
+    display: flex; gap: 14px; font-size: 22px; font-weight: 600;
+  }
+  .tag span { padding: 8px 18px; border-radius: 999px; background: #16a34a; }
+  .tag span + span { background: #1f3b2b; color: #bbf7d0; }
+  .art {
+    position: absolute; right: 24px; bottom: -36px; width: 620px; height: 620px;
+    object-fit: contain;
+  }
+</style>
+</head>
+<body>
+  <div class="text">
+    <h1>NUTS</h1>
+    <p class="acronym"><b>N</b>o <b>U</b>nwanted <b>T</b>abs or <b>S</b>waps</p>
+    <p class="pitch">One switch that stops pop-up ad tabs and redirects on streaming sites.</p>
+  </div>
+  <div class="tag"><span>Chrome extension</span><span>No tracking</span></div>
+  <img class="art" src="../assets/brand/nuts-logo-640.png" alt="">
+</body>
+</html>

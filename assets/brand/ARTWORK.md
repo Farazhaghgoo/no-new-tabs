@@ -1,9 +1,18 @@
-# NUTS guardian artwork
+# NUTS artwork
 
-Approved general logo: `nuts-logo.png` (original transparent character).
-Padded square: `nuts-logo-square.png`.
-Toolbar: happy/green ON and sad/grey OFF, at 16, 32, 48, 128 and 512 px.
-Animation: four transparent 512 px poses, played by `animation.js` with a separate moving ad panel.
+## Where each asset is used
+
+| Asset | Used for | Why |
+|---|---|---|
+| `nuts-logo.png` (full-body squirrel, 1254 px) | Master copy of the brand image | Original transparent character. Edit from this. |
+| `nuts-logo-640.png` | README hero, social preview | Same image, small enough for web pages. |
+| `nuts-logo-square.png` | `preview.html` gallery | Padded square for layouts that crop. |
+| `social-preview.png` (1280×640) | GitHub repository social preview, link shares | Logo plus name and pitch; rendered by `tools/make-social-preview.mjs`. |
+| `icons/on-16.png`, `on-32.png` | Toolbar while the switch is on | Happy face cropped to the green disc, so it stays readable at 16 px. |
+| `icons/off-16.png`, `off-32.png` | Toolbar while the switch is off | Sad face cropped to the grey disc. |
+| `icons/logo-16.png` to `logo-128.png` | App icon: extensions page, menus, Web Store | Happy face. The full-body logo is unreadable below 128 px. The 128 px file has the Web Store's 16 px padding. |
+| `icons/on-*`, `off-*` at 48, 128, 512 px | Preview page, future store art | Faces with ears, uncropped. |
+| `assets/animation/*.png` (4 poses, 512 px) | Switch-on animation | Played by `animation.js` with a separate moving ad panel. |
 
 The animation is a lightweight sprite sequence with CSS motion, not a rigged 3D model or a rendered video. Open `preview.html` to play it offline.
 

@@ -18,7 +18,7 @@
       display:grid; place-items:center; box-shadow:0 5px 18px #0002; animation:reject 2600ms both; }
     .ad:before { content:'•••'; position:absolute; top:0; left:0; right:0; height:17px;
       background:#f65d50; color:white; font-size:12px; padding-left:5px; border-radius:6px 6px 0 0; }
-    .caption { position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); white-space:nowrap;
+    .caption { position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); white-space:nowrap; z-index:3;
       padding:8px 15px; border-radius:24px; background:#123322; color:#fff; box-shadow:0 4px 18px #0002;
       font-weight:650; animation:caption 2600ms both; }
     button { position:absolute; right:0; top:0; width:28px; height:28px; border:1px solid #ffffff50;
