@@ -1,4 +1,4 @@
-// Local test server for No New Tabs.
+// Local test server for NUTS.
 // Usage: node test/server.mjs  then open http://localhost:8787/
 //
 // "localhost" and "127.0.0.1" count as two different sites, so the test page
@@ -41,7 +41,7 @@ export function startServer(port = 8787) {
         `<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${other}/ad.html">` +
           `<title>Meta refresh</title><body style="font:15px system-ui;margin:24px">` +
           `<h1>Meta refresh page</h1><p>This page tries to jump to an ad right away. ` +
-          `With No New Tabs ON you should stay here.</p><p><a href="/">Back to the test page</a></p>`,
+          `With NUTS ON you should stay here.</p><p><a href="/">Back to the test page</a></p>`,
       );
     }
 

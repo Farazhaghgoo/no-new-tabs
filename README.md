@@ -1,6 +1,8 @@
-# No New Tabs
+# NUTS
 
-A Chrome extension with one switch. While it is **on**, web pages cannot open new tabs or windows, and cannot send your current tab to another site.
+**N**o **U**nwanted **T**abs or **S**waps: for streaming sites that drive you nuts.
+
+A Chrome extension with one switch. While it is **on**, web pages cannot open new tabs or windows, and cannot swap your current tab for another site.
 
 It is meant for sites, like some streaming sites, where every click first opens an ad in a new tab or redirects you to one. Ad blockers often miss these, because the ad opens from a real click and the browser treats it as something you asked for. This extension doesn't try to recognise ads: while it's on, it blocks all of these tabs and redirects.
 
@@ -12,7 +14,7 @@ Turn it on when you visit such a site and off when you leave.
 2. Open `chrome://extensions` in Chrome.
 3. Turn on **Developer mode** (top right).
 4. Click **Load unpacked** and pick the folder that contains `manifest.json`.
-5. Pin the extension: click the puzzle-piece icon in the toolbar, then the pin next to **No New Tabs**.
+5. Pin the extension: click the puzzle-piece icon in the toolbar, then the pin next to **NUTS: No Unwanted Tabs or Swaps**.
 6. Reload any tabs that were already open, so the extension can run in them.
 
 It should also work in Edge, Brave and other Chromium browsers (at `edge://extensions`, `brave://extensions`, and so on), but it has only been tested in Chrome.

@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "No New Tabs",
+  "name": "NUTS: No Unwanted Tabs or Swaps",
+  "short_name": "NUTS",
   "version": "1.0.0",
-  "description": "A one-click shield. While it is on, pages cannot open new tabs or send your tab to another site.",
+  "description": "One switch. While it is on, pages cannot open new tabs or swap your tab for another site.",
   "minimum_chrome_version": "110",
   "permissions": ["storage", "webNavigation"],
   "host_permissions": ["<all_urls>"],
@@ -24,7 +25,7 @@
     "128": "icons/on-128.png"
   },
   "action": {
-    "default_title": "No New Tabs",
+    "default_title": "NUTS",
     "default_icon": {
       "16": "icons/off-16.png",
       "32": "icons/off-32.png"

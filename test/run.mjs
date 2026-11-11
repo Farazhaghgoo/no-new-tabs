@@ -1,4 +1,4 @@
-// Automated end-to-end test for No New Tabs.
+// Automated end-to-end test for NUTS.
 // Usage: node test/run.mjs [--headed] [--verbose]
 //
 // Starts the test server, launches Chrome with a throwaway profile, loads the
@@ -85,7 +85,7 @@ const INDEX = `http://localhost:${PORT}/`;
 const AD = `http://127.0.0.1:${PORT}/ad.html`;
 const EXTERNAL = `http://127.0.0.1:${PORT}/external.html`;
 
-const profile = mkdtempSync(join(tmpdir(), 'no-new-tabs-test-'));
+const profile = mkdtempSync(join(tmpdir(), 'nuts-test-'));
 const chrome = spawn(
   findChrome(),
   [

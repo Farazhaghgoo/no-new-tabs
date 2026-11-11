@@ -1,4 +1,4 @@
-// No New Tabs: background service worker.
+// NUTS: background service worker.
 //
 // The worker is started and stopped by the browser at will, so nothing
 // important lives only in a variable. The on/off switch is kept in
@@ -47,8 +47,8 @@ async function render() {
   await chrome.action.setBadgeBackgroundColor({ color: enabled ? COLOR_ON : COLOR_OFF });
   await chrome.action.setTitle({
     title: enabled
-      ? `No New Tabs is ON (${blocked} blocked). Click to turn off.`
-      : 'No New Tabs is OFF. Click to turn on.',
+      ? `NUTS is ON (${blocked} blocked). Click to turn off.`
+      : 'NUTS is OFF. Click to turn on.',
   });
 }
 
@@ -114,7 +114,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
   if (tabId == null || !message) return;
   if (message.type === 'blocked-redirect') countBlocked();
   if (message.type === 'user-nav') {
-    const site = NoNewTabsSite.of(message.url);
+    const site = NutsSite.of(message.url);
     if (site) withTab(tabId, (state) => ({ ...state, click: { site, at: Date.now() } }));
   }
 });
@@ -159,7 +159,7 @@ chrome.webNavigation.onCommitted.addListener((d) => {
 
   withTab(d.tabId, async (state) => {
     const now = Date.now();
-    const site = NoNewTabsSite.of(d.url);
+    const site = NutsSite.of(d.url);
     const qualifiers = d.transitionQualifiers || [];
     const accept = () => ({ url: d.url, site, bounces: state.bounces || [] });
 

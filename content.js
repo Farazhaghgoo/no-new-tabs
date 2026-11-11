@@ -1,4 +1,4 @@
-// No New Tabs: content script. Runs in every frame at document_start.
+// NUTS: content script. Runs in every frame at document_start.
 //
 // 1. In the top frame it cancels navigations that the page starts by itself
 //    (location.href = ..., location.replace, form.submit, meta refresh,
@@ -71,8 +71,8 @@
     if (event.navigationType !== 'push' && event.navigationType !== 'replace') return;
 
     const to = event.destination.url;
-    const here = NoNewTabsSite.of(location.href);
-    const there = NoNewTabsSite.of(to);
+    const here = NutsSite.of(location.href);
+    const there = NutsSite.of(to);
     if (!here || !there || here === there) return;
 
     if (enabled === null) {

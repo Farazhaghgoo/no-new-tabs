@@ -5,8 +5,8 @@
 // ads.other.com does not. A full public-suffix list is overkill here; the
 // common two-part country suffixes (co.uk, com.br, ...) are handled.
 
-/* exported NoNewTabsSite */
-var NoNewTabsSite = (() => {
+/* exported NutsSite */
+var NutsSite = (() => {
   const SECOND_LEVEL = new Set(['ac', 'co', 'com', 'edu', 'gob', 'gov', 'mil', 'ne', 'net', 'or', 'org']);
 
   function of(url) {
