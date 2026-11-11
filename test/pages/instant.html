@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Instant redirect</title>
+<script>
+  // Runs before anything else on the page, to race the extension.
+  location.replace(`${location.protocol}//${location.hostname === 'localhost' ? '127.0.0.1' : 'localhost'}${location.port ? ':' + location.port : ''}/ad.html`);
+</script>
+</head>
+<body style="margin:24px;font:15px/1.45 system-ui,sans-serif">
+<h1>Instant redirect page</h1>
+<p>This page tried to jump to an ad as it loaded. With No New Tabs ON you should stay here.</p>
+<p><a href="/">Back to the test page</a></p>
+</body>
+</html>

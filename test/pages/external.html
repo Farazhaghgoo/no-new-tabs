@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>External page</title>
+</head>
+<body style="margin:24px;font:15px/1.45 system-ui,sans-serif;background:#f0fdf4;color:#14532d">
+<h1>Another site, reached on purpose</h1>
+<p>You clicked a real link to this site, so No New Tabs let it through. This is expected.</p>
+<p><a id="back">Back to the test page</a></p>
+<script>
+  document.getElementById('back').href = `http://localhost${location.port ? ':' + location.port : ''}/`;
+</script>
+</body>
+</html>

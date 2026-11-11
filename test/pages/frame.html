@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Player iframe</title>
+<style>
+  body { margin: 0; font: 14px/1.4 system-ui, sans-serif; background: #111827; color: #e5e7eb; height: 128px; }
+  /* Fixed positions so the automated test can click them from outside. */
+  button { position: absolute; left: 10px; width: 300px; height: 44px; font: inherit; border-radius: 6px; border: 1px solid #6b7280; background: #1f2937; color: #f9fafb; cursor: pointer; }
+  #frame-popup { top: 10px; }
+  #frame-top { top: 64px; }
+  p { position: absolute; left: 330px; top: 10px; margin: 0; right: 10px; color: #9ca3af; }
+</style>
+</head>
+<body>
+<button id="frame-popup">Popup from the player</button>
+<button id="frame-top">Player redirects the whole tab</button>
+<p>This frame is on another site, like an embedded video player. Its scripts try to open the ad in a new tab, or to send the whole tab to it.</p>
+<script>
+  const AD = `${location.origin}/ad.html`;
+  document.getElementById('frame-popup').addEventListener('click', () => window.open(AD));
+  document.getElementById('frame-top').addEventListener('click', () => (top.location.href = AD));
+</script>
+</body>
+</html>

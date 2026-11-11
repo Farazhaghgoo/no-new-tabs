@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>No New Tabs test page</title>
+<style>
+  body { font: 15px/1.45 system-ui, sans-serif; margin: 24px auto; padding: 0 16px; max-width: 920px; color: #111; background: #f6f7f9; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  h2 { font-size: 16px; margin: 28px 0 10px; }
+  p.lead { margin-top: 0; color: #444; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px; }
+  .case { background: #fff; border: 1px solid #d8dbe0; border-radius: 8px; padding: 10px 12px; }
+  .case small { display: block; margin-top: 6px; color: #555; }
+  button, a.btn { font: inherit; padding: 6px 12px; border: 1px solid #8a8f98; border-radius: 6px; background: #eef0f3; color: #111; text-decoration: none; display: inline-block; cursor: pointer; }
+  iframe { width: 100%; height: 130px; border: 1px dashed #8a8f98; border-radius: 8px; background: #fff; }
+  code { background: #eef0f3; padding: 1px 4px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>No New Tabs test page</h1>
+<p class="lead">Each button copies a trick that ad scripts use. Turn the extension ON, click them, and check that no tab opens and this page stays put. Turn it OFF to see what each trick does without it. The "ad" lives on <code id="other"></code>, a different site from this page.</p>
+
+<h2>Should be blocked while ON: new tabs</h2>
+<div class="grid">
+  <div class="case"><button id="popup">window.open()</button><small>Opens the ad in a new tab.</small></div>
+  <div class="case"><button id="popup-noopener">window.open() with noopener</button><small>Same, without a link back to this page.</small></div>
+  <div class="case"><a class="btn" id="blank-link" target="_blank" data-ad>Link with target="_blank"</a><small>A real link that opens in a new tab.</small></div>
+  <div class="case"><button id="delayed-popup">Delayed window.open()</button><small>Opens the ad 0.3 s after the click.</small></div>
+  <div class="case"><button id="tab-under">Tab-under</button><small>Opens this page in a new tab and sends this tab to the ad.</small></div>
+</div>
+
+<h2>Should be blocked while ON: this tab leaving</h2>
+<div class="grid">
+  <div class="case"><button id="redirect">location.href = ad</button><small>The click handler sends this tab to the ad.</small></div>
+  <div class="case"><button id="replace">location.replace(ad)</button><small>Same, and erases this page from history.</small></div>
+  <div class="case"><button id="script-link">Script clicks a hidden link</button><small>A script calls <code>link.click()</code> on an ad link.</small></div>
+  <div class="case"><button id="form-submit">Script submits a form</button><small>A hidden form posted to the ad site.</small></div>
+  <div class="case"><button id="timer-redirect">Delayed redirect</button><small>Sends this tab to the ad 0.3 s after the click.</small></div>
+  <div class="case"><a class="btn" id="go-link" href="/go">Same-site link that forwards</a><small>Looks like a link on this site; the server forwards it to the ad.</small></div>
+  <div class="case"><a class="btn" href="/instant.html">Page that redirects as it loads</a><small>Opens a page on this site that jumps to the ad at once. You should end up on that page, not the ad.</small></div>
+  <div class="case"><a class="btn" href="/refresh">Page with a meta refresh</a><small>Opens a page on this site that jumps to the ad with <code>&lt;meta http-equiv="refresh"&gt;</code>.</small></div>
+</div>
+
+<h2>Should be blocked while ON: from inside a video-player iframe</h2>
+<iframe id="frame" title="Player iframe on another site"></iframe>
+
+<h2>Should still work while ON</h2>
+<div class="grid">
+  <div class="case"><button id="same-site">Script goes to a page on this site</button><small>Moving around the same site is fine.</small></div>
+  <div class="case"><a class="btn" id="real-link" data-external>Real link to another site</a><small>You clicked it yourself, so it opens here.</small></div>
+  <div class="case"><a class="btn" id="out-link" data-out>Real link that bounces once</a><small>Like a link shortener: you chose to leave, so its redirect is allowed.</small></div>
+</div>
+
+<form id="ad-form" method="get" hidden></form>
+
+<script>
+  const port = location.port ? `:${location.port}` : '';
+  const OTHER = `${location.protocol}//${location.hostname === 'localhost' ? '127.0.0.1' : 'localhost'}${port}`;
+  const AD = `${OTHER}/ad.html`;
+
+  document.getElementById('other').textContent = new URL(OTHER).host;
+  document.querySelectorAll('[data-ad]').forEach((a) => (a.href = AD));
+  document.querySelectorAll('[data-external]').forEach((a) => (a.href = `${OTHER}/external.html`));
+  document.querySelectorAll('[data-out]').forEach((a) => (a.href = `${OTHER}/out`));
+  document.getElementById('ad-form').action = AD;
+
+  const frame = document.getElementById('frame');
+  frame.addEventListener('load', () => (window.frameReady = true));
+  frame.src = `${OTHER}/frame.html`;
+
+  const on = (id, fn) => document.getElementById(id).addEventListener('click', fn);
+  on('popup', () => window.open(AD));
+  on('popup-noopener', () => window.open(AD, '_blank', 'noopener'));
+  on('delayed-popup', () => setTimeout(() => window.open(AD), 300));
+  on('tab-under', () => {
+    window.open(location.href);
+    location.href = AD;
+  });
+  on('redirect', () => (location.href = AD));
+  on('replace', () => location.replace(AD));
+  on('script-link', () => {
+    const a = document.createElement('a');
+    a.href = AD;
+    document.body.append(a);
+    a.click();
+  });
+  on('form-submit', () => document.getElementById('ad-form').submit());
+  on('timer-redirect', () => setTimeout(() => (location.href = AD), 300));
+  on('same-site', () => (location.href = '/next.html'));
+</script>
+</body>
+</html>
