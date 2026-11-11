@@ -220,6 +220,9 @@ async function clickInFrame(top) {
       return { x: r.x + 1 + 160, y: r.y + 1 + ${top} + 22 };
     })()`,
   );
+  // The browser hit-tests clicks into another site's frame from the last
+  // painted frame, so let the scroll paint first.
+  await sleep(500);
   await mouseClick(x, y);
 }
 
@@ -252,7 +255,15 @@ const CASES = [
   { name: 'real link that bounces', kind: 'allow', expect: `http://[::1]:${PORT}/external.html`, act: () => click('#out-link') },
 ];
 
-const strip = (u) => u.split('#')[0].replace(/\/$/, '');
+// Compare pages, not query strings: a GET form adds "?" to the ad's URL.
+const strip = (u) => {
+  try {
+    const url = new URL(u);
+    return url.origin + url.pathname;
+  } catch {
+    return u;
+  }
+};
 
 async function runCase(c) {
   await closeOtherTabs();
@@ -287,7 +298,11 @@ const rows = [];
 
 try {
   // The toolbar button: toggle() is what a click on the icon runs.
-  const before = await badge();
+  let before = await badge();
+  for (let i = 0; i < 30 && before === ''; i++) {
+    await sleep(100); // the worker draws the badge as it starts
+    before = await badge();
+  }
   await evaluate(sw, 'toggle().then(() => true)');
   await sleep(200);
   const afterOn = await badge();
