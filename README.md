@@ -40,7 +40,7 @@ To see the artwork and animation without installing anything, open `preview.html
 3. Turn on **Developer mode** (top right).
 4. Click **Load unpacked** and pick the folder that contains `manifest.json`.
 5. Pin the extension: click the puzzle-piece icon in the toolbar, then the pin next to **NUTS: No Unwanted Tabs or Swaps**.
-6. Reload any tabs that were already open, so the extension can run in them.
+6. Tabs that were already open pick NUTS up the first time you click its icon in them, or when you reload them.
 
 It should also work in Edge, Brave and other Chromium browsers (at `edge://extensions`, `brave://extensions`, and so on), but it has only been tested in Chrome.
 
@@ -89,14 +89,14 @@ The switch stays as you left it after Chrome restarts.
 - **A link swapped under your cursor gets through.** If a page changes a real link's address just before you click it, the click counts as yours.
 - **The first click may do nothing.** The ad overlay often catches it, so you may need to click play twice.
 - **"Sign in with Google" and similar buttons** often fail while it is on, because they open a popup or redirect to another site from a script.
-- **Tabs that were open before you installed the extension** need a reload before it can guard them.
+- **Tabs that were open before you installed or updated NUTS** get its page guard and animations the first time you click the NUTS icon in them, or when you reload them. Closing pop-up tabs and sending redirects back work in them straight away.
 
 ## How it works
 
 | File | Role |
 |---|---|
 | `manifest.json` | Manifest V3. Permissions: `storage`, `webNavigation`, and access to all sites so the guard can run in pages. |
-| `background.js` | The switch, mascot icon and hover tooltip. Closes tabs that pages open (`webNavigation.onCreatedNavigationTarget`). Sends the tab back when a redirect slips past the page guard. |
+| `background.js` | The switch, mascot icon and hover tooltip. Adds the page scripts to tabs that were open before an install or update, when you click the icon there. Closes tabs that pages open (`webNavigation.onCreatedNavigationTarget`). Sends the tab back when a redirect slips past the page guard. |
 | `content.js` | Runs at the start of every page. In the top frame, it cancels page-started navigations to another site through the [Navigation API](https://developer.mozilla.org/docs/Web/API/Navigation_API)'s `navigate` event. In every frame, it tells the background which real links you click, so your own clicks are never blocked. |
 | `site.js` | Decides whether two addresses are the same site (so `www.example.com` and `player.example.com` count as one). |
 | `icons/` | Toolbar faces (`on-*`, `off-*`) and the app icon (`logo-*`). |

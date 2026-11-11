@@ -2,10 +2,10 @@
   "manifest_version": 3,
   "name": "NUTS: No Unwanted Tabs or Swaps",
   "short_name": "NUTS",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "One switch. While it is on, pages cannot open new tabs or swap your tab for another site.",
   "minimum_chrome_version": "110",
-  "permissions": ["storage", "webNavigation"],
+  "permissions": ["scripting", "storage", "webNavigation"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
