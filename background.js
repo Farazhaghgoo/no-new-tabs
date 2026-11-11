@@ -5,6 +5,8 @@
 // chrome.storage.local (survives restarts) and per-session data in
 // chrome.storage.session (cleared when the browser closes).
 
+importScripts('site.js');
+
 const COLOR_ON = '#16a34a';
 const COLOR_OFF = '#6b7280';
 
@@ -66,6 +68,14 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.runtime.onInstalled.addListener(render);
 chrome.runtime.onStartup.addListener(render);
+
+// --------------------------------------------- messages from the pages
+
+chrome.runtime.onMessage.addListener((message, sender) => {
+  const tabId = sender.tab && sender.tab.id;
+  if (tabId == null || !message) return;
+  if (message.type === 'blocked-redirect') countBlocked();
+});
 
 // ------------------------------------------------- tabs opened by pages
 
