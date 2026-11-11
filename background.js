@@ -36,6 +36,10 @@ async function render() {
   let text = 'OFF';
   if (enabled) text = blocked === 0 ? 'ON' : blocked > 999 ? '999+' : String(blocked);
 
+  const icon = enabled ? 'on' : 'off';
+  await chrome.action.setIcon({
+    path: { 16: `icons/${icon}-16.png`, 32: `icons/${icon}-32.png` },
+  });
   await chrome.action.setBadgeText({ text });
   await chrome.action.setBadgeTextColor({ color: '#ffffff' });
   await chrome.action.setBadgeBackgroundColor({ color: enabled ? COLOR_ON : COLOR_OFF });
@@ -46,11 +50,13 @@ async function render() {
   });
 }
 
-chrome.action.onClicked.addListener(async () => {
+async function toggle() {
   const enabled = !(await isEnabled());
   await chrome.storage.session.set({ blocked: 0 });
   await chrome.storage.local.set({ enabled });
-});
+}
+
+chrome.action.onClicked.addListener(toggle);
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if ((area === 'local' && 'enabled' in changes) || (area === 'session' && 'blocked' in changes)) {
