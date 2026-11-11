@@ -66,8 +66,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-chrome.runtime.onInstalled.addListener(render);
-chrome.runtime.onStartup.addListener(render);
+// Draw the button whenever the worker starts, so it is right from the first
+// moment after install, update or browser start.
+render();
 
 // ---------------------------------------------------- per-tab memory
 //
