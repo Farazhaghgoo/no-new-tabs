@@ -7,9 +7,6 @@
 
 importScripts('site.js');
 
-const COLOR_ON = '#16a34a';
-const COLOR_OFF = '#6b7280';
-
 // ---------------------------------------------------------------- state
 
 async function isEnabled() {
@@ -32,7 +29,7 @@ function countBlocked() {
 // ------------------------------------------------------- toolbar button
 
 // Storage changes can ask for several redraws at once. Running them side by
-// side let an older one finish last and leave the badge showing the wrong
+// side let an older one finish last and leave the icon showing the wrong
 // state, so draws run one at a time and the last one reads the final state.
 let drawing = null;
 let redrawWanted = false;
@@ -56,20 +53,17 @@ async function draw() {
   const enabled = await isEnabled();
   const { blocked } = await chrome.storage.session.get({ blocked: 0 });
 
-  let text = 'OFF';
-  if (enabled) text = blocked === 0 ? 'ON' : blocked > 999 ? '999+' : String(blocked);
-
   const icon = enabled ? 'on' : 'off';
   await chrome.action.setIcon({
     path: { 16: `icons/${icon}-16.png`, 32: `icons/${icon}-32.png` },
   });
-  await chrome.action.setBadgeText({ text });
-  await chrome.action.setBadgeTextColor({ color: '#ffffff' });
-  await chrome.action.setBadgeBackgroundColor({ color: enabled ? COLOR_ON : COLOR_OFF });
+  // The standing mascot is the state indicator. Clear old text/count badges
+  // too, so upgrading never leaves lettering over the artwork.
+  await chrome.action.setBadgeText({ text: '' });
   await chrome.action.setTitle({
     title: enabled
-      ? `NUTS is ON (${blocked} blocked). Click to turn off.`
-      : 'NUTS is OFF. Click to turn on.',
+      ? `NUTS (${blocked} blocked)`
+      : 'NUTS',
   });
 }
 

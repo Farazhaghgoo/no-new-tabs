@@ -62,27 +62,20 @@ function Export-Disc($image, $cx, $cy, $radius, $size, $destination) {
   $brush.Dispose(); $graphics.Dispose(); $bitmap.Dispose(); $art.Dispose()
 }
 
-# ------------------------------------------------------------ face icons
-# toggle-sheet.png holds two cells: happy on green (ON), sad on grey (OFF).
-# Disc centres were measured from the sheet; 376 px stays just inside both
-# discs' anti-aliased rims.
-$faces = [System.Drawing.Image]::FromFile((Join-Path $source 'toggle-sheet.png'))
+# -------------------------------------------------------- standing icons
+# Two complete standing poses; never crop the body at toolbar sizes.
+$faces = [System.Drawing.Image]::FromFile((Join-Path $source 'standing-sheet.png'))
 $cell = [int]($faces.Width / 2)
-$discs = @{ on = @(440, 470); off = @(1318, 470) }
-$radius = 376
 for ($i = 0; $i -lt 2; $i++) {
   $name = @('on', 'off')[$i]
   $rect = [System.Drawing.Rectangle]::new($i * $cell, 0, $cell, $faces.Height)
-  # Toolbar sizes: disc only.
-  foreach ($size in @(16, 32)) { Export-Disc $faces $discs[$name][0] $discs[$name][1] $radius $size "icons/$name-$size.png" }
-  # Larger sizes keep the ears.
-  foreach ($size in @(48, 128, 512)) { Export-Region $faces $rect $size "icons/$name-$size.png" }
+  foreach ($size in @(16, 32, 48, 128, 512)) { Export-Region $faces $rect $size "icons/$name-$size.png" }
+  Export-Region $faces $rect 1024 "assets/brand/nuts-standing-$name.png"
 }
 
-# App icon (extensions page, menus, Web Store): the happy face.
+# App icon uses the active standing mascot.
 $happy = [System.Drawing.Rectangle]::new(0, 0, $cell, $faces.Height)
-foreach ($size in @(16, 32)) { Export-Disc $faces $discs.on[0] $discs.on[1] $radius $size "icons/logo-$size.png" }
-Export-Region $faces $happy 48 'icons/logo-48.png'
+foreach ($size in @(16, 32, 48)) { Export-Region $faces $happy $size "icons/logo-$size.png" }
 # Web Store guideline: 96 px of artwork inside a 128 px canvas.
 Export-Padded $faces $happy 96 128 'icons/logo-128.png'
 $faces.Dispose()
@@ -114,4 +107,4 @@ $g.Dispose(); $padded.Dispose()
 Export-Region $logo ([System.Drawing.Rectangle]::new(0, 0, $logo.Width, $logo.Height)) 640 'assets/brand/nuts-logo-640.png'
 $logo.Dispose()
 
-Write-Output 'Exported toolbar faces, app icons, animation poses and logo sizes.'
+Write-Output 'Exported standing toolbar states, app icons, animation poses and logo sizes.'

@@ -84,7 +84,7 @@
     root.append(status);
     const scene = document.createElement('div');
     scene.className = reduced ? 'quiet' : 'scene';
-    if (reduced) scene.textContent = '✓ NUTS protection is on';
+    if (reduced) scene.textContent = '✓ NUTS is protecting your tabs';
     else {
       scene.dataset.phase = 'approach';
       const character = document.createElement('div');
@@ -106,7 +106,7 @@
     document.addEventListener('keydown', escape);
     current = { host, timers: [], escape };
     const later = (fn, delay) => current.timers.push(setTimeout(fn, delay));
-    later(() => { status.textContent = 'NUTS protection is on'; }, 30);
+    later(() => { status.textContent = 'NUTS is protecting your tabs'; }, 30);
     if (!reduced) {
       for (const [phase, delay] of [['block', 620], ['offer', 1120], ['hearts', 1700]]) {
         later(() => { host.dataset.phase = scene.dataset.phase = phase; }, delay);

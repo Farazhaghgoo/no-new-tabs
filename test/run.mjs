@@ -355,29 +355,33 @@ async function checkBranding() {
 
 try {
   // The toolbar button: toggle() is what a click on the icon runs.
-  let before = await badge();
-  for (let i = 0; i < 30 && before === ''; i++) {
-    await sleep(100); // the worker draws the badge as it starts
-    before = await badge();
-  }
-  // Wait up to 3 s for the expected badge, then make sure it stays: a late
-  // redraw must not flip it back.
-  const settledBadge = async (expected) => {
-    let text = await badge();
-    for (let i = 0; i < 30 && text !== expected; i++) {
-      await sleep(100);
-      text = await badge();
-    }
-    await sleep(500);
-    return badge();
-  };
+  // Observe actual icon calls while still sending them to Chrome.
+  await evaluate(sw, `(() => {
+    const original = chrome.action.setIcon.bind(chrome.action);
+    chrome.action.setIcon = (details) => { globalThis.lastIconPath = details.path[16]; return original(details); };
+    return true;
+  })()`);
+  // Simulate an upgrade from the old text-badge version.
+  await evaluate(sw, 'chrome.action.setBadgeText({text:"ON"}).then(() => render()).then(() => true)');
+  const before = await badge();
+  const beforeIcon = await evaluate(sw, 'lastIconPath');
   await evaluate(sw, 'toggle().then(() => true)');
-  const afterOn = await settledBadge('ON');
+  await evaluate(sw, 'render().then(() => true)');
+  const afterOn = await badge();
+  const onIcon = await evaluate(sw, 'lastIconPath');
+  const enabledOn = await evaluate(sw, 'isEnabled()');
+  await evaluate(sw, 'countBlocked(); queue.then(() => render()).then(() => true)');
+  const afterBlock = await badge();
+  const tooltip = await evaluate(sw, 'chrome.action.getTitle({})');
   await evaluate(sw, 'toggle().then(() => true)');
-  const afterOff = await settledBadge('OFF');
-  const toggleOk = before === 'OFF' && afterOn === 'ON' && afterOff === 'OFF';
+  await evaluate(sw, 'render().then(() => true)');
+  const afterOff = await badge();
+  const offIcon = await evaluate(sw, 'lastIconPath');
+  const toggleOk = [before, afterOn, afterOff, afterBlock].every(text => text === '') &&
+    beforeIcon === 'icons/off-16.png' && onIcon === 'icons/on-16.png' && offIcon === 'icons/off-16.png' &&
+    enabledOn === true && await evaluate(sw, 'isEnabled()') === false && tooltip.includes('1 blocked');
   if (!toggleOk) failures++;
-  console.log(`Toolbar toggle: badge ${before} -> ${afterOn} -> ${afterOff}  ${toggleOk ? 'PASS' : 'FAIL'}\n`);
+  console.log(`Toolbar: standing icons swap, old badge cleared, no count overlay, count in tooltip  ${toggleOk ? 'PASS' : 'FAIL'}\n`);
 
   if (BRANDING_ONLY) {
     await checkBranding();

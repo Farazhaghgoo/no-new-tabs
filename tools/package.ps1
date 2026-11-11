@@ -4,12 +4,16 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $version = (Get-Content (Join-Path $root 'manifest.json') -Raw | ConvertFrom-Json).version
+if ($version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') { throw 'Invalid package version.' }
 $name = "NUTS-$version"
 $release = Join-Path $root 'releases'
 $stage = Join-Path $release $name
 $zip = Join-Path $release "$name.zip"
 
 # Start clean so files removed from the project don't linger in the build.
+$resolvedStage = [System.IO.Path]::GetFullPath($stage)
+$resolvedRelease = [System.IO.Path]::GetFullPath($release) + [System.IO.Path]::DirectorySeparatorChar
+if (-not $resolvedStage.StartsWith($resolvedRelease, [System.StringComparison]::OrdinalIgnoreCase)) { throw 'Staging path outside release directory.' }
 if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
 if (Test-Path -LiteralPath $zip) { Remove-Item -LiteralPath $zip -Force }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
@@ -26,6 +30,9 @@ foreach ($folder in @('icons', 'assets/animation')) {
 $brand = Join-Path $stage 'assets/brand'
 New-Item -ItemType Directory -Force -Path $brand | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'assets/brand/nuts-logo-640.png') -Destination $brand
+foreach ($file in @('nuts-standing-on.png', 'nuts-standing-off.png')) {
+  Copy-Item -LiteralPath (Join-Path $root "assets/brand/$file") -Destination $brand
+}
 
 # Windows' own tar writes zip entries with forward slashes, so the archive
 # unpacks correctly on macOS and Linux too (Compress-Archive in Windows
