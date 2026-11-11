@@ -8,6 +8,18 @@ It is meant for sites, like some streaming sites, where every click first opens 
 
 Turn it on when you visit such a site and off when you leave.
 
+## Guardian edition — artwork and activation
+
+The toolbar now shows a happy squirrel on green when ON and a sad squirrel on grey when OFF. The approved full-body character is the general extension logo. PNGs are included at 16, 32, 48 and 128 px, with 512 px face artwork for other uses.
+
+Clicking the toolbar button to turn protection ON plays a 2.6-second animation in the upper-right corner of the current page: she approaches, pushes a separate ad panel away, offers an acorn, and briefly has heart eyes. This is a lightweight four-pose sprite animation with CSS motion, not a rigged 3D video. It does not play on page loads or every blocked ad. It is silent, allows clicks through to the page, and can be dismissed with Escape or its close button. Turning OFF cancels it. The operating system's reduced-motion preference replaces it with a brief static confirmation.
+
+Chrome internal pages and other restricted pages cannot show the animation. Protection still toggles. Reload pages already open when you install or update the extension.
+
+**Preview:** open `preview.html` directly from the extracted folder, then click **Turn on the charm**. The preview works offline and includes both toggle states and the general logo. This preview button demonstrates the artwork; it does not change your installed extension's state.
+
+**Brand files:** `assets/brand/nuts-logo.png` is the approved original; `nuts-logo-square.png` adds transparent padding. `assets/animation/` contains the four animation poses. `assets/source/` contains the generated source sheets. See `assets/brand/ARTWORK.md` for provenance and design directions.
+
 ## Install
 
 1. Download this repository (Code → Download ZIP, then unzip it) or clone it.
@@ -73,7 +85,10 @@ The switch stays as you left it after Chrome restarts.
 | `background.js` | The switch and badge. Closes tabs that pages open (`webNavigation.onCreatedNavigationTarget`). Sends the tab back when a redirect slips past the page guard. |
 | `content.js` | Runs at the start of every page. In the top frame, it cancels page-started navigations to another site through the [Navigation API](https://developer.mozilla.org/docs/Web/API/Navigation_API)'s `navigate` event. In every frame, it tells the background which real links you click, so your own clicks are never blocked. |
 | `site.js` | Decides whether two addresses are the same site (so `www.example.com` and `player.example.com` count as one). |
-| `icons/` | Toolbar icons, drawn by `tools/make-icons.mjs`. |
+| `icons/` | Happy/sad toolbar icons and general logo sizes. |
+| `animation.js`, `activation.js` | Shared animation renderer and top-frame toolbar activation receiver. |
+| `tools/export-brand.ps1` | Re-export PNGs from the saved sheets on Windows; `node tools/make-icons.mjs` invokes it. |
+| `preview.html` | Offline artwork gallery and animation preview. |
 
 Nothing is sent anywhere. The extension makes no network requests, and it stores only the switch, the blocked count and, per open tab, the last allowed address, which is cleared when you close the tab or the browser.
 
@@ -85,6 +100,18 @@ Automated test, which runs every trick in a hidden Chrome window with a temporar
 
 ```bash
 node test/run.mjs
+```
+
+Check activation phases, cancellation, rapid toggles, reduced motion, and desktop/mobile preview rendering:
+
+```bash
+node test/run.mjs --branding-only
+```
+
+On Windows, package the extension, artwork, source sheets, preview, and tests:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/package.ps1
 ```
 
 Add `--headed` to watch it, or `--verbose` to print each navigation. If Chrome is somewhere unusual, set `CHROME` to its path.

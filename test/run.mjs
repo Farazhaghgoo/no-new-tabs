@@ -8,15 +8,16 @@
 // Set CHROME=/path/to/chrome to pick the browser.
 
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { startServer } from './server.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const HEADED = process.argv.includes('--headed');
 const VERBOSE = process.argv.includes('--verbose');
+const BRANDING_ONLY = process.argv.includes('--branding-only');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function findChrome() {
@@ -296,6 +297,62 @@ function describe(r) {
 let failures = 0;
 const rows = [];
 
+async function checkBranding() {
+  const check = (name, ok) => {
+    rows.push([name, '-', ok ? 'verified' : 'failed', ok ? 'PASS' : 'FAIL']);
+    if (!ok) failures++;
+  };
+  const screenshots = join(ROOT, 'artifacts', 'checks');
+  mkdirSync(screenshots, { recursive: true });
+  const shot = async (name) => {
+    const { data } = await cdp.send('Page.captureScreenshot', { format: 'png' }, page);
+    writeFileSync(join(screenshots, `${name}.png`), Buffer.from(data, 'base64'));
+  };
+  const phase = () => evaluate(page, 'document.querySelector("nuts-activation")?.dataset.phase || "none"');
+  const waitPhase = async (wanted) => {
+    for (let i = 0; i < 100; i++) {
+      if (await phase() === wanted) return true;
+      await sleep(30);
+    }
+    return false;
+  };
+  await open(INDEX);
+  check('no animation on page load', await phase() === 'none');
+  const tabId = await evaluate(sw, `(async () => (await chrome.tabs.query({})).find(t => t.url === ${JSON.stringify(INDEX)}).id)()`);
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
+  check('activation reaches blocking pose', await waitPhase('block'));
+  await shot('activation-block');
+  check('activation reaches heart eyes', await waitPhase('hearts'));
+  await shot('activation-hearts');
+  check('activation cleans itself up', await waitPhase('none'));
+  // Turning off mid-sequence must remove the overlay, even while assets load.
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => toggle({id:${tabId}})).then(() => true)`);
+  await waitPhase('approach');
+  await evaluate(sw, 'toggle().then(() => true)');
+  check('OFF cancels animation', await waitPhase('none'));
+  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] }, page);
+  await evaluate(sw, `toggle({id:${tabId}}).then(() => true)`);
+  check('reduced motion quiet confirmation', await waitPhase('quiet'));
+  check('reduced motion cleanup', await waitPhase('none'));
+  await evaluate(sw, 'toggle().then(() => true)');
+  await cdp.send('Emulation.setEmulatedMedia', { features: [] }, page);
+  await evaluate(sw, `Promise.all([toggle({id:${tabId}}),toggle({id:${tabId}})]).then(() => true)`);
+  check('rapid toggle ends OFF', await evaluate(sw, 'isEnabled()') === false);
+  await sleep(300);
+  check('rapid toggle leaves no overlay', await phase() === 'none');
+  await open(pathToFileURL(join(ROOT, 'preview.html')).href);
+  check('offline preview images load', await evaluate(page, 'Array.from(document.images).every(i => i.complete && i.naturalWidth > 0)'));
+  await shot('preview-desktop');
+  await evaluate(page, 'document.getElementById("replay").click(); true');
+  check('offline preview plays', await waitPhase('block'));
+  await waitPhase('none');
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true }, page);
+  await sleep(100);
+  check('mobile preview has no overflow', await evaluate(page, 'document.documentElement.scrollWidth <= innerWidth'));
+  await shot('preview-mobile');
+  await cdp.send('Emulation.clearDeviceMetricsOverride', {}, page);
+}
+
 try {
   // The toolbar button: toggle() is what a click on the icon runs.
   let before = await badge();
@@ -313,6 +370,9 @@ try {
   if (!toggleOk) failures++;
   console.log(`Toolbar toggle: badge ${before} -> ${afterOn} -> ${afterOff}  ${toggleOk ? 'PASS' : 'FAIL'}\n`);
 
+  if (BRANDING_ONLY) {
+    await checkBranding();
+  } else {
   const results = { off: [], on: [] };
   for (const mode of ['off', 'on']) {
     await setEnabled(mode === 'on');
@@ -346,6 +406,7 @@ try {
   rows.push(['tab opened by the browser', '-', survived ? 'kept open' : 'closed', survived ? 'PASS' : 'FAIL']);
 
   rows.push(['badge after the ON run', '-', `"${await badge()}"`, '']);
+  }
 } finally {
   await cleanup();
 }

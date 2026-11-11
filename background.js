@@ -52,10 +52,22 @@ async function render() {
   });
 }
 
-async function toggle() {
+let toggleQueue = Promise.resolve();
+function toggle(tab) {
+  const next = toggleQueue.then(() => applyToggle(tab));
+  toggleQueue = next.catch(() => {});
+  return next;
+}
+
+async function applyToggle(tab) {
   const enabled = !(await isEnabled());
   await chrome.storage.session.set({ blocked: 0 });
   await chrome.storage.local.set({ enabled });
+  // Only a deliberate toolbar activation plays the mascot, in that tab.
+  // Restricted pages and tabs awaiting a reload simply have no receiver.
+  if (enabled && tab?.id != null) {
+    await chrome.tabs.sendMessage(tab.id, { type: 'nuts-activate' }, { frameId: 0 }).catch(() => {});
+  }
 }
 
 chrome.action.onClicked.addListener(toggle);

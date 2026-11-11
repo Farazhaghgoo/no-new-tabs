@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "NUTS: No Unwanted Tabs or Swaps",
   "short_name": "NUTS",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "One switch. While it is on, pages cannot open new tabs or swap your tab for another site.",
   "minimum_chrome_version": "110",
   "permissions": ["storage", "webNavigation"],
@@ -16,14 +16,25 @@
       "js": ["site.js", "content.js"],
       "run_at": "document_start",
       "all_frames": true
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["animation.js", "activation.js"],
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "icons": {
-    "16": "icons/on-16.png",
-    "32": "icons/on-32.png",
-    "48": "icons/on-48.png",
-    "128": "icons/on-128.png"
+    "16": "icons/logo-16.png",
+    "32": "icons/logo-32.png",
+    "48": "icons/logo-48.png",
+    "128": "icons/logo-128.png"
   },
+  "web_accessible_resources": [{
+    "resources": ["assets/animation/*.png"],
+    "matches": ["<all_urls>"],
+    "use_dynamic_url": true
+  }],
   "action": {
     "default_title": "NUTS",
     "default_icon": {
