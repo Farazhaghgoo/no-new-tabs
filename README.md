@@ -1,7 +1,7 @@
 # NUTS
 
 **N**o **U**nwanted **T**abs or **S**waps: for streaming sites that drive you nuts.
-
+with the hottest mascot EVERRRR!!!!
 A Chrome extension with one switch. While it is **on**, web pages cannot open new tabs or windows, and cannot swap your current tab for another site.
 
 It is meant for sites, like some streaming sites, where every click first opens an ad in a new tab or redirects you to one. Ad blockers often miss these, because the ad opens from a real click and the browser treats it as something you asked for. This extension doesn't try to recognise ads: while it's on, it blocks all of these tabs and redirects.
