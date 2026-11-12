@@ -23,11 +23,11 @@ NUTS comes with a squirrel bouncer: soft welcome, strong boundaries.
 | Toolbar, switch off | <img src="icons/off-32.png" width="24" alt=""> Sad, greyed face on grey |
 | Extensions page and menus | <img src="icons/logo-48.png" width="24" alt=""> The happy face |
 | Turning it on | A 2.6-second animation in the corner of the page |
-| Turning it off | A 2.4-second animation: she goes off duty and the ad comes back |
+| Turning it off | A 2.6-second animation: she sadly trudges off and the ad comes back |
 
 When you switch NUTS on from the toolbar, the squirrel walks in, pushes an ad window away, offers you an acorn and briefly gets heart eyes. It is silent, lets clicks through to the page, and closes itself; Escape or its × button closes it early, and switching off cancels it. If your system asks for reduced motion, you get a short "NUTS is protecting your tabs" note instead. It never plays on page loads or for each blocked ad.
 
-When you switch NUTS off from the toolbar, she lowers her stop hand, her colour drains to grey with her ears down, and she walks off while the ad window slides back in, with the caption "Off duty. Pop-ups can get through." Reduced motion gets a short "NUTS is off" note instead. Switching back on during it replaces it with the switch-on animation.
+When you switch NUTS off from the toolbar, she appears sad with her ears down, slumps with a sigh, and trudges off while the ad window pops back in where she stood, with the caption "Off duty. Pop-ups can get through." Reduced motion gets a short "NUTS is off" note instead. Switching back on during it replaces it with the switch-on animation.
 
 Chrome's own pages (like `chrome://` pages and the Web Store) can't show the animation, but the switch still works there.
 

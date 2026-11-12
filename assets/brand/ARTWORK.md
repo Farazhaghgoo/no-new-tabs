@@ -14,7 +14,7 @@
 | `icons/on-*`, `off-*` at 48, 128, 512 px | Preview page, future store art | Faces with ears, uncropped; OFF greyed. |
 | `nuts-standing-on.png`, `nuts-standing-off.png` (1024 px) | Preview page, large artwork | The full standing poses from `standing-sheet.png`, backdrops included. |
 | `assets/animation/approach, block, offer, hearts.png` (512 px) | Switch-on animation | Played by `animation.js` with a separate moving ad panel. |
-| `assets/animation/off.png` (512 px) | Switch-off animation | The sad standing squirrel, cut out of her grey circle by `tools/export-brand.ps1` (soft colour key in `tools/BrandPixels.cs`). The switch-off animation also reuses `block.png` and a mirrored `approach.png`. |
+| `assets/animation/off.png` (512 px) | Switch-off animation | The sad standing squirrel, cut out of her grey circle by `tools/export-brand.ps1` (soft colour key in `tools/BrandPixels.cs`). The switch-off animation uses only this pose, so she stays sad from start to finish. |
 
 The animation is a lightweight sprite sequence with CSS motion, not a rigged 3D model or a rendered video. Open `preview.html` to play it offline.
 
