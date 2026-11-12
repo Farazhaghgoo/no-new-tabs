@@ -5,7 +5,7 @@
   let generation = 0;
   let pending = null; // { ticket, mode } while artwork is still decoding
   const DURATION = 2600;
-  const DURATION_OFF = 2400;
+  const DURATION_OFF = 2600;
   const styles = `
     :host { all:initial; position:fixed; top:18px; right:18px; width:min(320px,calc(100vw - 36px));
       z-index:2147483647; pointer-events:none; color:#fff; font:14px/1.4 system-ui,sans-serif; }
@@ -45,27 +45,37 @@
       40%,100% { opacity:0; transform:translate(120px,-45px) rotate(38deg) scale(.7); }
     }
     @keyframes caption { 0%,18% { opacity:0; } 30%,82% { opacity:1; } 100% { opacity:0; } }
-    .scene[data-mode="off"] .character { animation:departure 2400ms cubic-bezier(.4,.1,.3,1) both; }
-    .scene[data-mode="off"] .ad { animation:return 2400ms both; }
-    .scene[data-mode="off"] .caption { z-index:5; background:#374151; animation:caption-off 2400ms both; }
-    .scene[data-mode="off"] .leave { transform:scaleX(-1); }
-    [data-phase="duty"] .duty, [data-phase="sad"] .sad, [data-phase="leave"] .leave { opacity:1; }
+    /* Switch-off: one sad pose from start to finish, in her own muted colours.
+       She appears already sad, slumps with a sigh, then trudges off to the right
+       while the ad slides back in. */
+    .scene[data-mode="off"] .character { animation:departure 2600ms cubic-bezier(.45,.05,.35,1) both; }
+    /* The ad pops back in on the left, in the spot she is leaving. */
+    .scene[data-mode="off"] .ad { z-index:3; left:4%; right:auto; top:12%; animation:return 2600ms both; }
+    .scene[data-mode="off"] .caption { z-index:5; background:#374151; animation:caption-off 2600ms both; }
+    .scene[data-mode="off"] .sad { opacity:1; transform-origin:50% 96%; }
+    .scene[data-phase="leave"] .sad { animation:trudge 460ms ease-in-out infinite; }
     .quiet[data-mode="off"] { background:#374151; }
     @keyframes departure {
-      0% { opacity:0; transform:translateY(10px) scale(.9); filter:none; }
-      8%,20% { opacity:1; transform:translateY(0) scale(1); filter:none; }
-      30%,54% { opacity:1; transform:translateY(5px) scale(.97); filter:grayscale(.55) saturate(.7); }
-      96% { opacity:.25; transform:translate(130px,5px) scale(.97); filter:grayscale(.55) saturate(.7); }
-      100% { opacity:0; transform:translate(150px,5px) scale(.97); filter:grayscale(.55) saturate(.7); }
+      0% { opacity:0; transform:translateY(14px) scale(.94); }
+      9%,23% { opacity:1; transform:translateY(0) scale(1); }
+      30% { transform:translateY(8px) scale(.965); }
+      36%,44% { transform:translateY(5px) scale(.97); }
+      92% { opacity:1; transform:translate(150px,5px) scale(.97); }
+      100% { opacity:0; transform:translate(175px,5px) scale(.97); }
+    }
+    @keyframes trudge {
+      0%,50%,100% { transform:translateY(0) rotate(0); }
+      25% { transform:translateY(-5px) rotate(-1.6deg); }
+      75% { transform:translateY(-5px) rotate(1.6deg); }
     }
     @keyframes return {
-      0%,36% { opacity:0; transform:translateX(90px) rotate(10deg); }
-      44% { opacity:1; transform:translateX(-8px) rotate(-6deg); }
-      50% { opacity:1; transform:translateX(4px) rotate(4deg); }
-      56%,88% { opacity:1; transform:translateX(0) rotate(0); }
+      0%,44% { opacity:0; transform:translateX(-90px) rotate(-10deg); }
+      52% { opacity:1; transform:translateX(8px) rotate(6deg); }
+      58% { opacity:1; transform:translateX(-4px) rotate(-4deg); }
+      64%,90% { opacity:1; transform:translateX(0) rotate(0); }
       100% { opacity:0; transform:translateX(0) rotate(0); }
     }
-    @keyframes caption-off { 0%,8% { opacity:0; } 20%,85% { opacity:1; } 100% { opacity:0; } }
+    @keyframes caption-off { 0%,6% { opacity:0; } 16%,86% { opacity:1; } 100% { opacity:0; } }
     @media (prefers-reduced-motion:reduce) { * { animation:none!important; } }
   `;
 
@@ -97,7 +107,7 @@
     const reduced = reducedMotion ?? matchMedia('(prefers-reduced-motion: reduce)').matches;
     const images = [];
     if (!reduced) {
-      const poses = off ? [['block', 'duty'], ['off', 'sad'], ['approach', 'leave']]
+      const poses = off ? [['off', 'sad']]
         : ['approach', 'block', 'offer', 'hearts'].map((name) => [name, name]);
       for (const [file, pose] of poses) {
         const img = new Image();
@@ -111,7 +121,7 @@
     }
     if (ticket !== generation || !document.documentElement) return false;
     pending = null;
-    const first = off ? 'duty' : 'approach';
+    const first = off ? 'sad' : 'approach';
     const host = document.createElement('nuts-activation');
     host.dataset.mode = mode;
     host.dataset.phase = reduced ? 'quiet' : first;
@@ -151,7 +161,7 @@
     const later = (fn, delay) => current.timers.push(setTimeout(fn, delay));
     later(() => { status.textContent = off ? 'NUTS is off' : 'NUTS is protecting your tabs'; }, 30);
     if (!reduced) {
-      const steps = off ? [['sad', 500], ['leave', 1300]] : [['block', 620], ['offer', 1120], ['hearts', 1700]];
+      const steps = off ? [['sigh', 600], ['leave', 1150]] : [['block', 620], ['offer', 1120], ['hearts', 1700]];
       for (const [phase, delay] of steps) {
         later(() => { host.dataset.phase = scene.dataset.phase = phase; }, delay);
       }
